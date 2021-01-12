@@ -1,0 +1,135 @@
+from flask import Flask, Response
+from flask_pymongo import PyMongo
+from bson.json_util import dumps
+import os
+from flask_paginate import get_page_args
+from flask import request
+import math
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.getcwd(), '.env'))
+
+app = Flask(__name__)
+app.config.from_object('config.default')
+
+app.config['MONGO_URI'] = os.environ['MONGO_URL']
+mongo = PyMongo(app)
+
+DEFAULT_COLLECTIONS = app.config['DEFAULT_COLLECTIONS']
+print('DEFAULT_COLLECTIONS: <{}>'.format(DEFAULT_COLLECTIONS))
+
+
+@app.route('/movies')
+def get_all(): 
+
+    key, value = get_filter_parameters()
+    sort, direction = get_sort_parameters()
+    page, per_page, offset = get_pagination_parameters()
+    all_movies = []
+    
+    for default_collection in DEFAULT_COLLECTIONS: 
+        movies = find_in_db(default_collection, key, value, sort, direction)
+        all_movies.extend(movies)
+
+    total_size = len(all_movies)
+    all_movies, is_last_page = get_data_paginated(all_movies, page, per_page, offset)
+
+    data = []
+    
+    for item in all_movies: 
+        rename_item_id(item)
+        data.append(item)
+
+    result = {
+        'result': data, 
+        'page': page, 
+        'perPage': per_page, 
+        'size': len(data), 
+        'totalPages': math.ceil(total_size / per_page), 
+        'totalSize': total_size, 
+        'isFirstPage': page == 1, 
+        'isLastPage': is_last_page, 
+        'isEmpty': len(data) == 0
+    }
+    
+    return Response(dumps(result), mimetype='application/json')
+
+
+@app.route('/services/<service>/movies')
+def get_by_service(service): 
+
+    key, value = get_filter_parameters()
+    sort, direction = get_sort_parameters()
+    page, per_page, offset = get_pagination_parameters()
+
+    movies = find_in_db(service, key, value, sort, direction)
+    total_size = len(movies)
+    movies, is_last_page = get_data_paginated(movies, page, per_page, offset)
+    data = []
+
+    for item in movies: 
+        rename_item_id(item)
+        data.append(item)
+    
+    result = {
+        'result': data, 
+        'page': page, 
+        'perPage': per_page, 
+        'size': len(data), 
+        'totalPages': math.ceil(total_size / per_page), 
+        'totalSize': total_size, 
+        'isFirstPage': page == 1, 
+        'isLastPage': is_last_page, 
+        'isEmpty': len(data) == 0
+    }
+    
+    return Response(dumps(result), mimetype='application/json')
+
+
+def get_filter_parameters(): 
+    return (request.args.get('key'), request.args.get('value'))
+
+
+def get_sort_parameters(): 
+    return (request.args.get('sort'), request.args.get('direction'))
+
+
+def get_pagination_parameters(): 
+    return get_page_args(page_parameter='page', per_page_parameter='perPage')
+
+
+def rename_item_id(item): 
+    id_item = str(item['_id'])
+    del item['_id']
+    item.update(id = id_item)
+
+
+def find_in_db(service, key = None, value = None, sort = None, direction = None): 
+
+    collection = mongo.db[service]
+
+    if key and value: 
+        result = collection.find({key: {'$regex': value, '$options': 'i'}})
+    else: 
+        result = collection.find()
+    
+    if sort and direction: 
+        direction = int(direction)
+        result = result.sort(sort, direction)
+
+    return list(result)
+
+
+def get_data_paginated(data, page, per_page, offset): 
+
+    data_len = len(data)
+
+    data_paged = data[offset: offset + per_page]
+    is_last_page = page * per_page >= data_len
+
+    return data_paged, is_last_page
+
+
+if __name__ == "__main__": 
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
