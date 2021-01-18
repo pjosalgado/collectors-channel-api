@@ -6,20 +6,35 @@ from flask_paginate import get_page_args
 from flask import request
 import math
 from dotenv import load_dotenv
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 app = Flask(__name__)
 app.config.from_object('config.default')
-
 app.config['MONGO_URI'] = os.environ['MONGO_URL']
+
+auth = HTTPBasicAuth()
+user_auth = os.environ['AUTH_USER']
+password_auth = os.environ['AUTH_PASSWORD']
+
 mongo = PyMongo(app)
 
 DEFAULT_COLLECTIONS = app.config['DEFAULT_COLLECTIONS']
 print('DEFAULT_COLLECTIONS: <{}>'.format(DEFAULT_COLLECTIONS))
 
+users_auth = {user_auth: generate_password_hash(password_auth)}
+
+
+@auth.verify_password
+def verify_password(username, password): 
+    if username in users_auth and check_password_hash(users_auth.get(username), password):
+        return username
+
 
 @app.route('/movies')
+@auth.login_required
 def get_all(): 
 
     key, value = get_filter_parameters()
@@ -56,6 +71,7 @@ def get_all():
 
 
 @app.route('/services/<service>/movies')
+@auth.login_required
 def get_by_service(service): 
 
     key, value = get_filter_parameters()
