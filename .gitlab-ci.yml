@@ -1,20 +1,22 @@
-image: python:3.8
+image: python:3.9-slim
 
 stages:
-    - deploy
+  - test
+  - deploy
 
-before_script:
-    - pip install -r requirements.txt
+include:
+  - template: Security/SAST.gitlab-ci.yml
 
 heroku:
-    stage: deploy
-    script:
-        - apt update -qy
-        - apt install -y ruby-dev
-        - gem install dpl
-        - dpl --provider=heroku --app=$HEROKU_APP --api-key=$HEROKU_API_KEY
-    only:
-        - master
-    environment:
-        name: heroku
-        url: $ENV_URL
+  stage: deploy
+  script:
+    - pip install -r requirements.txt
+    - apt update
+    - apt install ruby-dev -y
+    - gem install dpl
+    - dpl --provider=heroku --app=$HEROKU_APP --api-key=$HEROKU_API_KEY
+  only:
+    - master
+  environment:
+    name: heroku
+    url: $ENV_URL
