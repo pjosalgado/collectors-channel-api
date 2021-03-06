@@ -1,1 +1,1 @@
-DEFAULT_COLLECTIONS = ['amazon', 'famdvd', 'theoriginals', 'videoperola']
+SITES_AVAILABLE = ['amazon', 'colecione-classicos', 'fam-dvd', 'the-originals', 'video-perola']

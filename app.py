@@ -21,8 +21,8 @@ password_auth = os.environ['AUTH_PASSWORD']
 
 mongo = PyMongo(app)
 
-DEFAULT_COLLECTIONS = app.config['DEFAULT_COLLECTIONS']
-print('DEFAULT_COLLECTIONS: <{}>'.format(DEFAULT_COLLECTIONS))
+SITES_AVAILABLE = app.config['SITES_AVAILABLE']
+print('SITES_AVAILABLE: <{}>'.format(SITES_AVAILABLE))
 
 users_auth = {user_auth: generate_password_hash(password_auth)}
 
@@ -42,8 +42,9 @@ def get_all():
     page, per_page, offset = get_pagination_parameters()
     all_movies = []
     
-    for default_collection in DEFAULT_COLLECTIONS: 
-        movies = find_in_db(default_collection, key, value, sort, direction)
+    for service in SITES_AVAILABLE: 
+        service = service.replace('-', '')
+        movies = find_in_db(service, key, value, sort, direction)
         all_movies.extend(movies)
 
     total_size = len(all_movies)
@@ -74,6 +75,11 @@ def get_all():
 @auth.login_required
 def get_by_service(service): 
 
+    if service not in SITES_AVAILABLE: 
+        return site_not_found_response(service)
+
+    service = service.replace('-', '')
+
     key, value = get_filter_parameters()
     sort, direction = get_sort_parameters()
     page, per_page, offset = get_pagination_parameters()
@@ -100,6 +106,17 @@ def get_by_service(service):
     }
     
     return Response(dumps(result), mimetype='application/json')
+
+
+def site_not_found_response(service): 
+    return Response(dumps({
+        'status': 400, 
+        'code': 'BAD_REQUEST', 
+        'message': 'Invalid request', 
+        'errors': [{
+            'message': 'Site {} not found'.format(service)
+        }]
+    }), mimetype='application/json', status=400)
 
 
 def get_filter_parameters(): 
