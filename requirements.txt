@@ -1,10 +1,10 @@
-Flask==2.2.5
+Flask==2.0.1
 Flask-PyMongo==2.3.0
 gunicorn==20.0.4
 dnspython==1.16.0
 flask-paginate==0.7.1
 python-dotenv==0.15.0
 Flask-HTTPAuth==4.2.0
-werkzeug==2.2.3
+werkzeug==2.0.1
 jinja2~=3.0.3
-setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=65.5.1

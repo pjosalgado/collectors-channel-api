@@ -12,7 +12,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 
 app = Flask(__name__)
-app.config.from_object('config.default')
 app.config['MONGO_URI'] = os.environ['MONGO_URL']
 
 auth = HTTPBasicAuth()
@@ -21,10 +20,18 @@ password_auth = os.environ['AUTH_PASSWORD']
 
 mongo = PyMongo(app)
 
-SITES_AVAILABLE = app.config['SITES_AVAILABLE']
-print('SITES_AVAILABLE: <{}>'.format(SITES_AVAILABLE))
+SITES_AVAILABLE = [
+    'amazon', 
+    'colecione-classicos', 
+    'fam-dvd', 
+    'the-originals', 
+    'video-perola'
+]
+print('SITES_AVAILABLE: <{}>'.format(SITES_AVAILABLE), flush=True)
 
-users_auth = {user_auth: generate_password_hash(password_auth)}
+users_auth = {
+    user_auth: generate_password_hash(password_auth)
+}
 
 
 @auth.verify_password
@@ -59,13 +66,11 @@ def get_all():
     result = {
         'result': data, 
         'page': page, 
-        'perPage': per_page, 
         'size': len(data), 
         'totalPages': math.ceil(total_size / per_page), 
         'totalSize': total_size, 
         'isFirstPage': page == 1, 
-        'isLastPage': is_last_page, 
-        'isEmpty': len(data) == 0
+        'isLastPage': is_last_page
     }
     
     return Response(dumps(result), mimetype='application/json')
@@ -96,23 +101,30 @@ def get_by_service(service):
     result = {
         'result': data, 
         'page': page, 
-        'perPage': per_page, 
         'size': len(data), 
         'totalPages': math.ceil(total_size / per_page), 
         'totalSize': total_size, 
         'isFirstPage': page == 1, 
-        'isLastPage': is_last_page, 
-        'isEmpty': len(data) == 0
+        'isLastPage': is_last_page
     }
     
     return Response(dumps(result), mimetype='application/json')
 
 
+@app.route('/status')
+def status(): 
+
+    result = {
+        'status': 'ok'
+    }
+
+    return Response(dumps(result), mimetype='application/json')
+
+
 def site_not_found_response(service): 
     return Response(dumps({
-        'status': 400, 
-        'code': 'BAD_REQUEST', 
-        'message': 'Invalid request', 
+        'code': 'BAD_REQUEST',
+        'message': 'Invalid request',
         'errors': [{
             'message': 'Site {} not found'.format(service)
         }]
@@ -139,6 +151,8 @@ def rename_item_id(item):
 
 def find_in_db(service, key = None, value = None, sort = None, direction = None): 
 
+    print('find_in_db -> service = {}, key = {}, value = {}, sort = {}, direction = {}'.format(service, key, value, sort, direction), flush=True)
+
     collection = mongo.db[service]
 
     if key and value: 
@@ -164,5 +178,4 @@ def get_data_paginated(data, page, per_page, offset):
 
 
 if __name__ == "__main__": 
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000)

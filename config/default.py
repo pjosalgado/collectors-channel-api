@@ -1,1 +1,0 @@
-SITES_AVAILABLE = ['amazon', 'colecione-classicos', 'fam-dvd', 'the-originals', 'video-perola']
