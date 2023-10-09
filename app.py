@@ -21,10 +21,11 @@ password_auth = os.environ['AUTH_PASSWORD']
 mongo = PyMongo(app)
 
 SITES_AVAILABLE = [
-    'amazon', 
-    'colecione-classicos', 
-    'fam-dvd', 
-    'the-originals', 
+    'amazon',
+    'colecione-classicos',
+    'fam-dvd',
+    'the-originals',
+    'versatil',
     'video-perola'
 ]
 print('SITES_AVAILABLE: <{}>'.format(SITES_AVAILABLE), flush=True)

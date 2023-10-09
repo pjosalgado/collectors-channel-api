@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run -d -p 5000:5000 --name collectors-channel-api --env-file=.env paulosalgado/collectors-channel-api:1.1.0
+docker run -d -p 5000:5000 --name collectors-channel-api --env-file=.env paulosalgado/collectors-channel-api:1.2.0
